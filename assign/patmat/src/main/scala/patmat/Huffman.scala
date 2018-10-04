@@ -81,10 +81,12 @@ object Huffman {
     def timesAcc(chars: List[Char], acc: List[(Char, Int)]): List[(Char, Int)] = chars match{
       case Nil => acc
       case head :: tail =>
-        def newAcc =
-          if (acc.exists(_._1 == head)) acc.foldLeft (List[(Char, Int)]()) ((a, e) => if (e._1 == head) (e._1, e._2 + 1) :: a else e :: a)
+        def updateList(a: List[(Char, Int)], e: (Char, Int)) : List[(Char, Int)] =
+          if (e._1 == head) (e._1, e._2 + 1) :: a else e :: a
+        def updatedAcc =
+          if (acc.exists(_._1 == head)) acc.foldLeft (List[(Char, Int)]()) (updateList)
           else (head, 1) :: acc
-        timesAcc(tail, newAcc)
+        timesAcc(tail, updatedAcc)
     }
     timesAcc(chars, Nil)
   }
@@ -97,11 +99,9 @@ object Huffman {
    * of a leaf is the frequency of the character.
    */
   def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = {
-    def makeOrderedLeafFirstAcc(freqs: List[(Char, Int)], acc: List[Leaf]) : List[Leaf]= freqs match{
-      case Nil => acc
-      case head :: tail => makeOrderedLeafFirstAcc(tail, Leaf(head._1, head._2) :: acc)
-    }
-    makeOrderedLeafFirstAcc(freqs.sortWith((x, y) => x._2 > y._2), Nil)
+    def orderedFreqList = freqs.sortWith((x, y) => x._2 > y._2)
+    def freqListToLeafList(acc : List[Leaf], elem: (Char, Int)) = Leaf(elem._1, elem._2) :: acc
+    orderedFreqList.foldLeft(List[Leaf]()) (freqListToLeafList)
   }
 
   /**
@@ -149,7 +149,7 @@ object Huffman {
   def until(isSingleton: List[CodeTree] => Boolean, combineFunction: List[CodeTree] => List[CodeTree])
            (trees: List[CodeTree]): List[CodeTree] = trees match {
     case Nil =>  Nil
-    case head :: tail =>
+    case _ =>
       if (isSingleton(trees)) trees else until(isSingleton, combineFunction)(combineFunction(trees))
   }
 
@@ -159,7 +159,8 @@ object Huffman {
    * The parameter `chars` is an arbitrary text. This function extracts the character
    * frequencies from that text and creates a code tree based on them.
    */
-  def createCodeTree(chars: List[Char]): CodeTree = until(singleton, combine)(makeOrderedLeafList(times(chars))).head
+  def createCodeTree(chars: List[Char]): CodeTree =
+    until(singleton, combine)(makeOrderedLeafList(times(chars))).head
 
 
 
@@ -172,17 +173,17 @@ object Huffman {
    * the resulting list of characters.
    */
   def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
+    require(bits.forall(x => x == 1 || x == 0))
     def decodeTraverse(bit: Bit, tree: CodeTree) = tree match {
-      case Leaf(_,_) => tree
+      case Leaf(_,_) => throw new java.util.NoSuchElementException("Leaf is end of tree")
       case Fork(l, r, _, _) => if(bit == 0) l else r
     }
     def decodeAcc(tree: CodeTree, bits: List[Bit], acc: List[Char], currentTree: CodeTree): List[Char] = bits match {
       case Nil => acc.reverse
       case head :: tail =>
-        def nextTree = decodeTraverse(head, currentTree)
-        nextTree match{
+        decodeTraverse(head, currentTree) match{
           case Leaf(x, _) => decodeAcc(tree, tail, x :: acc, tree)
-          case Fork(_, _, _, _) => decodeAcc(tree, tail, acc, nextTree)
+          case Fork(_, _, _, _) => decodeAcc(tree, tail, acc, decodeTraverse(head, currentTree))
         }
     }
     decodeAcc(tree, bits, Nil, tree)
@@ -215,13 +216,15 @@ object Huffman {
    * into a sequence of bits.
    */
   def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
-    def encodeTraverse(currentTree: CodeTree, char: Char, acc: List[Bit]): List[Bit] = currentTree match {
+    def encodeLetter(currentTree: CodeTree, char: Char, acc: List[Bit]): List[Bit] = currentTree match {
       case Leaf(x, _) => acc.reverse
-      case Fork(l, r, _, _) => if(chars(l) contains char) encodeTraverse(l, char, 0::acc) else encodeTraverse(r, char, 1::acc)
+      case Fork(l, r, c, _) =>
+        require(c contains char)
+        if(chars(l) contains char) encodeLetter(l, char, 0::acc) else encodeLetter(r, char, 1::acc)
     }
     text match{
       case Nil => Nil
-      case head :: tail => encodeTraverse(tree, head, Nil) ++ encode(tree)(tail)
+      case head :: tail => encodeLetter(tree, head, Nil) ++ encode(tree)(tail)
     }
   }
 
@@ -234,8 +237,10 @@ object Huffman {
    * This function returns the bit sequence that represents the character `char` in
    * the code table `table`.
    */
-  def codeBits(table: CodeTable)(char: Char): List[Bit] = table(table indexWhere(_._1 == char))._2
-
+  def codeBits(table: CodeTable)(char: Char): List[Bit] = {
+    require(table.count(_._1 == char) == 1)
+    table(table indexWhere (_._1 == char))._2
+  }
   /**
    * Given a code tree, create a code table which contains, for every character in the
    * code tree, the sequence of bits representing that character.
@@ -245,9 +250,12 @@ object Huffman {
    * sub-trees, think of how to build the code table for the entire tree.
    */
   def convert(tree: CodeTree): CodeTable = {
-    def convertAcc(tree: CodeTree, currentBits: List[Bit]): CodeTable = tree match {
-      case Leaf(x, _) => (x, currentBits) :: Nil
-      case Fork(l, r, _, _) => mergeCodeTables(convertAcc(l, currentBits :+ 0), convertAcc(r, currentBits :+ 1))
+    def convertAcc(tree: CodeTree, currentBits: List[Bit]): CodeTable = {
+      require(currentBits.forall(x => x == 1 || x == 0))
+      tree match {
+        case Leaf(x, _) => (x, currentBits) :: Nil
+        case Fork(l, r, _, _) => mergeCodeTables(convertAcc(l, currentBits :+ 0), convertAcc(r, currentBits :+ 1))
+      }
     }
     convertAcc(tree, List[Bit]())
   }
@@ -265,5 +273,6 @@ object Huffman {
    * To speed up the encoding process, it first converts the code tree to a code table
    * and then uses it to perform the actual encoding.
    */
-  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] = text.foldLeft(List[Bit]())(_ ++ codeBits(convert(tree))(_))
+  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] =
+    text.foldLeft(List[Bit]())(_ ++ codeBits(convert(tree))(_))
 }
