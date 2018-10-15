@@ -34,7 +34,7 @@ object Anagrams {
    *  same character, and are represented as a lowercase character in the occurrence list.
    */
   def wordOccurrences(w: Word): Occurrences = {
-    val encodedWord = w.toLowerCase.toList.filter(_ != " ")
+    val encodedWord = w.toLowerCase.filter(_ != " ").toList
     (encodedWord groupBy (x => x)).mapValues(v => v.length).toList.sortWith(_._1 < _._1)
   }
   /** Converts a sentence into its character occurrence list. */
@@ -82,8 +82,16 @@ object Anagrams {
    *  Note that the order of the occurrence list subsets does not matter -- the subsets
    *  in the example above could have been displayed in some other order.
    */
-  def combinations(occurrences: Occurrences): List[Occurrences] = ???
-
+  def combinations(occurrences: Occurrences): List[Occurrences] = {
+    if (occurrences.isEmpty) List(Nil)
+    else {
+      val (char, n) = occurrences.head
+      for {
+        prevCombination <- combinations(occurrences.tail)
+        i <- 0 until n + 1
+      } yield if (i != 0) (char, i) :: prevCombination else prevCombination
+    }
+  }
   /** Subtracts occurrence list `y` from occurrence list `x`.
    * 
    *  The precondition is that the occurrence list `y` is a subset of
