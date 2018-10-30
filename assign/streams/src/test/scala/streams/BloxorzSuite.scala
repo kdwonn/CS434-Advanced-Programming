@@ -44,6 +44,8 @@ class BloxorzSuite extends FunSuite {
     new Level1 {
       assert(terrain(Pos(0,0)), "0,0")
       assert(!terrain(Pos(4,11)), "4,11")
+      assert(!terrain(Pos(5,11)), "5,11")
+      assert(!terrain(Pos(10,11)), "10,11")
     }
   }
 
