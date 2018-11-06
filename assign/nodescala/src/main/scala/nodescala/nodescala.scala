@@ -1,15 +1,19 @@
 package nodescala
 
 import com.sun.net.httpserver._
+
 import scala.concurrent._
 import scala.concurrent.duration._
 import ExecutionContext.Implicits.global
 import scala.async.Async.{async, await}
 import scala.collection._
 import scala.collection.JavaConversions._
-import java.util.concurrent.{Executor, ThreadPoolExecutor, TimeUnit, LinkedBlockingQueue}
+import java.util.concurrent.{Executor, LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
+
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import java.net.InetSocketAddress
+
+import rx.lang.scala.subscriptions
 
 /** Contains utilities common to the NodeScala© framework.
  */
@@ -47,7 +51,6 @@ trait NodeScala {
   def start(relativePath: String)(handler: Request => Response): Subscription = {
     val listener = createListener(relativePath)
     val listenerSubscription = listener.start()
-
     val loop = Future.run() { ct =>
       async {
         while (ct.nonCancelled) {
@@ -56,8 +59,7 @@ trait NodeScala {
         }
       }
     }
-
-    listenerSubscription
+    Subscription(listenerSubscription, loop)
   }
 
 }
