@@ -8,6 +8,9 @@ object ChatServer extends App{
   case class User(name: String, socket: Socket, textInStream: InputStream, textOutStream: PrintStream)
   val users = new TrieMap[String, User]()
   Future{launchServer}
+  while(true){
+    users foreach(p => broadcast(p._2))
+  }
 
   def launchServer: Unit = {
     val ss = new ServerSocket(1026)
@@ -37,7 +40,7 @@ object ChatServer extends App{
   }
   def broadcast(user: User): Unit ={
     readOrNotStream(user.textInStream) foreach { i =>
-      users foreach {(n, u) => u.textOutStream.println(u.name + " : " + i)}
+      users foreach (p => p._2.textOutStream.println(user.name + " : " + i))
     }
   }
 }
