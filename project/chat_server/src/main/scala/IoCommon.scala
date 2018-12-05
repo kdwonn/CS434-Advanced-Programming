@@ -1,13 +1,26 @@
-import java.io.{BufferedReader, InputStream, InputStreamReader}
+import java.io._
 
 object IoCommon {
-  def readOrNotStream(textInStream: InputStream): Option[String] = {
-    val br = new BufferedReader(new InputStreamReader(textInStream))
-    if(br.ready()) Some(br.readLine()) else None
+  def readOrNotStream(textInStream: InputStream): Option[Packet] = {
+    val ois = new ObjectInputStream(textInStream)
+    try{
+      val packet = ois.readObject().asInstanceOf[Packet]
+      Some(packet)
+    }catch{
+      case e: ClassCastException | IOException => None
+    }
   }
-  def readOrWaitStream(textInStream: InputStream): String = {
-    val br = new BufferedReader(new InputStreamReader(textInStream))
-    while(!br.ready()) Thread.sleep(10)
-    br.readLine()
+  def readOrWaitStream(textInStream: InputStream): Packet = {
+    val ois = new ObjectInputStream(textInStream)
+    def waitTilGet(ois: ObjectInputStream): Packet = {
+      val packet = ois.readObject()
+      try{
+        if(packet == null) {Thread.sleep(100);waitTilGet(ois)} else packet.asInstanceOf[Packet]
+      }
+      catch{
+        case e: ClassCastException => waitTilGet(ois)
+      }
+    }
+    waitTilGet(ois)
   }
 }
