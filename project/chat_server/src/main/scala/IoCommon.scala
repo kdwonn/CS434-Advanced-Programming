@@ -15,7 +15,7 @@ object IoCommon {
     def waitTilGet(ois: ObjectInputStream): Packet = {
       val packet = ois.readObject()
       try{
-        if(packet == null) {Thread.sleep(100);waitTilGet(ois)} else packet.asInstanceOf[Packet]
+        if(packet == null) {Thread.sleep(10);waitTilGet(ois)} else packet.asInstanceOf[Packet]
       }
       catch{
         case e: ClassCastException => waitTilGet(ois)
