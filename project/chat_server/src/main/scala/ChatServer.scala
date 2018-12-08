@@ -1,14 +1,19 @@
-import java.io.{BufferedReader, InputStream, InputStreamReader, PrintStream}
+import java.io._
 import java.net.{ServerSocket, Socket}
+import java.util
+
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object ChatServer extends App{
-  case class User(name: String, socket: Socket, textInStream: InputStream, textOutStream: PrintStream)
+  var noNameCount = 0
   val users = new TrieMap[String, User]()
+  val packetToBroadcast = new util.ArrayList[Packet]()
+
   Future{launchServer}
   while(true){
+    println("...")
     users foreach(p => broadcast(p._2))
     Thread.sleep(100)
   }
@@ -21,23 +26,22 @@ object ChatServer extends App{
       newUser(socketAccept)
     }
   }
+
   def newUser(socketAccept: Socket): Unit = {
-    val textInStream = socketAccept.getInputStream
-    val textoutStream = new PrintStream(socketAccept.getOutputStream)
+    lazy val ois = new ObjectInputStream(socketAccept.getInputStream)
+    lazy val oos = new ObjectOutputStream(socketAccept.getOutputStream)
     val name = Future {
-      IoCommon.readOrWaitStream(textInStream)
-    }
-    name foreach { name => {
-      println("[CLIENT] new user : " + name)
-      users += name -> User(name, socketAccept, socketAccept.getInputStream, textoutStream)
-    }
+      IoCommon.readStream(ois).from
+    } foreach { name => {
+        println("[SERVER] new user : " + name)
+        users += name -> new User(name, socketAccept, ois, oos)
+      }
     }
   }
+
   def broadcast(user: User): Unit ={
-    IoCommon.readOrNotStream(user.textInStream) foreach { i => {
-      println("[SERVER] Broadcasting new message : " + i)
-      users foreach (p => p._2.textOutStream.println(user.name + " : " + i))
-    }
-    }
+    val newPacket = user.readPacket
+    println("[SERVER] Broadcasting new packet : " + newPacket + " from " + user.name)
+    users foreach (p => p._2.outStream.writeObject(newPacket))
   }
 }
