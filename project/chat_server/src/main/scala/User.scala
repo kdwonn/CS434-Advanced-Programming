@@ -1,7 +1,5 @@
 import java.io.{ObjectInputStream, ObjectOutputStream}
 import java.net.Socket
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class User(val name: String, val socket: Socket, val inStream: ObjectInputStream, val outStream: ObjectOutputStream){
   def writePacket(packet: Packet): Unit = {
