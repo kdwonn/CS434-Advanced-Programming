@@ -1,26 +1,11 @@
 import java.io._
 
 object IoCommon {
-  def readOrNotStream(textInStream: InputStream): Option[Packet] = {
-    val ois = new ObjectInputStream(textInStream)
+  def readStream(ois: ObjectInputStream): Packet = {
     try{
-      val packet = ois.readObject().asInstanceOf[Packet]
-      Some(packet)
+      ois.readObject().asInstanceOf[Packet]
     }catch{
-      case e: ClassCastException | IOException => None
+      case e: ClassCastException => {println(e); Thread.sleep(10); readStream(ois)}
     }
-  }
-  def readOrWaitStream(textInStream: InputStream): Packet = {
-    val ois = new ObjectInputStream(textInStream)
-    def waitTilGet(ois: ObjectInputStream): Packet = {
-      val packet = ois.readObject()
-      try{
-        if(packet == null) {Thread.sleep(10);waitTilGet(ois)} else packet.asInstanceOf[Packet]
-      }
-      catch{
-        case e: ClassCastException => waitTilGet(ois)
-      }
-    }
-    waitTilGet(ois)
   }
 }
