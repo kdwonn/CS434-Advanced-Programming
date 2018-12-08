@@ -55,6 +55,7 @@ object ChatServer extends App{
     for((name, user) <- users; if packet.from != name){
       user.writePacket(packet)
     }
+    packetsToBroadcast.remove(0)
     println("[SERVER] Broadcast new packet : " + packet + " from " + packet.from)
   }
 }
