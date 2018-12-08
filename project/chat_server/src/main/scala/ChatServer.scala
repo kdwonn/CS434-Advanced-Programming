@@ -13,6 +13,7 @@ object ChatServer extends App{
 
   Future{launchServer}
   Future{checkThenBroadcast()}
+  while(true){()}
 
   def launchServer: Unit = {
     val ss = new ServerSocket(1026)
