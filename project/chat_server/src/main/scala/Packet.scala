@@ -2,6 +2,7 @@ import javax.sound.sampled.AudioFormat
 
 trait Packet{
   def message : Any
+  def from : String
   def getMessage : Any
 }
 
@@ -12,10 +13,12 @@ object Sound{
   val defaultLength = 1200
 }
 
-case class TextPacket(message : String) extends Packet with Serializable{
+case class TextPacket(message: String, from: String) extends Packet with Serializable{
   override def getMessage: String = message
+  override def toString: String = "[TEXT] : " + message
 }
 
-case class SoundPacket(message : Sound) extends Packet with Serializable{
+case class SoundPacket(message: Sound, from: String) extends Packet with Serializable{
   override def getMessage: Sound = message
+  override def toString: String = "[SOUND]"
 }
