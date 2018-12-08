@@ -9,14 +9,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object ChatServer extends App{
   var noNameCount = 0
   val users = new TrieMap[String, User]()
-  val packetToBroadcast = new util.ArrayList[Packet]()
+  val packetsToBroadcast = new util.ArrayList[Packet]()
 
   Future{launchServer}
-  while(true){
-    println("...")
-    users foreach(p => broadcast(p._2))
-    Thread.sleep(100)
-  }
+  Future{checkThenBroadcast()}
 
   def launchServer: Unit = {
     val ss = new ServerSocket(1026)
@@ -30,18 +26,34 @@ object ChatServer extends App{
   def newUser(socketAccept: Socket): Unit = {
     lazy val ois = new ObjectInputStream(socketAccept.getInputStream)
     lazy val oos = new ObjectOutputStream(socketAccept.getOutputStream)
-    val name = Future {
+    Future {
       IoCommon.readStream(ois).from
     } foreach { name => {
         println("[SERVER] new user : " + name)
-        users += name -> new User(name, socketAccept, ois, oos)
+        val newUser = new User(name, socketAccept, ois, oos)
+        users += name -> newUser
+        Future{newUser.checkIncomingPacket(this)}
       }
     }
   }
 
-  def broadcast(user: User): Unit ={
-    val newPacket = user.readPacket
-    println("[SERVER] Broadcasting new packet : " + newPacket + " from " + user.name)
-    users foreach (p => p._2.outStream.writeObject(newPacket))
+  def addBroadcastPacket(packet: Packet): Unit = this.synchronized{
+    packetsToBroadcast.add(packet)
+  }
+
+  def checkThenBroadcast(): Unit ={
+    while(true){
+      println("... checking ...")
+      if (packetsToBroadcast.isEmpty) () else broadcast()
+      Thread.sleep(100)
+    }
+  }
+
+  def broadcast(): Unit ={
+    val packet = packetsToBroadcast.get(0)
+    for((name, user) <- users; if packet.from != name){
+      user.writePacket(packet)
+    }
+    println("[SERVER] Broadcast new packet : " + packet + " from " + packet.from)
   }
 }
