@@ -18,9 +18,11 @@ class User(val name: String, val socket: Socket, val inStream: ObjectInputStream
       case e: ClassCastException => {println(e); Thread.sleep(10); readPacket}
     }
   }
-  def checkIncomingPacket(server: ChatServer.type): Future[Unit] = Future{
-    while(true){
+  def checkIncomingPacket(server: ChatServer.type): Unit = {
+    while (true) {
       println("[SERVER] [" + name + "] reading incoming packet")
+      server.addBroadcastPacket(readPacket)
+      println("[SERVER] [" + name + "] new message added to broadcast array")
     }
   }
 }
