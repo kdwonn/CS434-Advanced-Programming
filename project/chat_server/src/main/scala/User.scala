@@ -3,18 +3,10 @@ import java.net.Socket
 
 class User(val name: String, val socket: Socket, val inStream: ObjectInputStream, val outStream: ObjectOutputStream){
   def writePacket(packet: Packet): Unit = {
-    try {
-      outStream.writeObject(packet)
-    }catch {
-      case _ => {Thread.sleep(10); writePacket(packet)}
-    }
+    IoCommon.writeStream(outStream, packet)
   }
   def readPacket: Packet = {
-    try {
-      inStream.readObject().asInstanceOf[Packet]
-    }catch {
-      case e: ClassCastException => {println(e); Thread.sleep(10); readPacket}
-    }
+    IoCommon.readStream(inStream)
   }
   def checkIncomingPacket(server: ChatServer.type): Unit = {
     while (true) {
