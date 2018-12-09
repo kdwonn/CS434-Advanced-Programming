@@ -13,7 +13,9 @@ object ChatServer extends App{
 
   Future{launchServer}
   Future{checkThenBroadcast()}
-  while(true){()}
+  while(true){
+    Thread.sleep(10)
+  }
 
   def launchServer: Unit = {
     val ss = new ServerSocket(1026)
@@ -44,7 +46,7 @@ object ChatServer extends App{
 
   def checkThenBroadcast(): Unit ={
     while(true){
-      println("... checking ...")
+      println("... checking ..." + System.currentTimeMillis())
       if (packetsToBroadcast.isEmpty) () else broadcast()
       Thread.sleep(100)
     }
