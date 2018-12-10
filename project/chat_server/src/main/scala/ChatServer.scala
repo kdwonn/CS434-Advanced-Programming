@@ -46,18 +46,18 @@ object ChatServer extends App{
 
   def checkThenBroadcast(): Unit ={
     while(true){
-      println("... checking ..." + System.currentTimeMillis())
+      //println("... checking ..." + System.currentTimeMillis())
       if (packetsToBroadcast.isEmpty) () else broadcast()
-      Thread.sleep(100)
+      Thread.sleep(10)
     }
   }
 
   def broadcast(): Unit ={
     val packet = packetsToBroadcast.get(0)
-    for((name, user) <- users; if packet.from != name){
+    for((name, user) <- users; if name != packet.from){
       user.writePacket(packet)
     }
     packetsToBroadcast.remove(0)
-    println("[SERVER] Broadcast new packet : " + packet + " from " + packet.from)
+    //println("[SERVER] Broadcast new packet : " + packet + " from " + packet.from)
   }
 }

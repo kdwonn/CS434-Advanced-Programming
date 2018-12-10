@@ -16,7 +16,7 @@ case class TextPacket(message: String, from: String) extends Packet with Seriali
 }
 
 case class SoundPacket(message: Sound, from: String) extends Packet with Serializable{
-  override def toString: String = "[SOUND]"
+  override def toString: String = "[SOUND]" + message.bytes.mkString(" ")
 }
 
 case class EmptyPacket(from: String) extends Packet with Serializable{

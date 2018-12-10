@@ -5,7 +5,7 @@ import javax.sound.sampled.{AudioSystem, DataLine, SourceDataLine}
 import org.apache.commons.io.IOUtils
 import scala.util.Try
 
-class Player(val name: String) {
+class Player {
   val packetsToPlay = new util.ArrayList[Packet]()
   val audioOutLine: SourceDataLine = {
     val info = new DataLine.Info(classOf[SourceDataLine], Sound.defaultFormat)
@@ -14,8 +14,12 @@ class Player(val name: String) {
   val emptyBytes: Array[Byte] = Array.fill(Sound.defaultLength)(0)
 
   private def playerStart(): Unit = {
-    audioOutLine.open(Sound.defaultFormat)
-    audioOutLine.start()
+    try{
+      audioOutLine.open(Sound.defaultFormat)
+      audioOutLine.start()
+    } catch{
+      case e: Exception => println("CANNOT OPEN SPEAKER")
+    }
   }
 
   def checkThenPlay() = {
@@ -32,6 +36,7 @@ class Player(val name: String) {
 
     val bytesToPlay = packet match {
       case SoundPacket(m, f) => {
+        // println("PLAYER soundpacket received")
         Try {
           val zipStream = new GZIPInputStream (new ByteArrayInputStream (m.bytes) )
           IOUtils.toByteArray (zipStream)
@@ -40,6 +45,7 @@ class Player(val name: String) {
       case EmptyPacket(_) => emptyBytes
     }
 
+    // println("PLAYER writing bytes to speaker" + bytesToPlay.mkString(" "))
     audioOutLine.write(bytesToPlay, 0, Sound.defaultLength)
   }
 }

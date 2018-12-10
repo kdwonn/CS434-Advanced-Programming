@@ -10,9 +10,9 @@ class User(val name: String, val socket: Socket, val inStream: ObjectInputStream
   }
   def checkIncomingPacket(server: ChatServer.type): Unit = {
     while (true) {
-      println("[SERVER] [" + name + "] reading incoming packet")
+      //println("[SERVER] [" + name + "] reading incoming packet")
       server.addBroadcastPacket(readPacket)
-      println("[SERVER] [" + name + "] new message added to broadcast array")
+      //println("[SERVER] [" + name + "] new message added to broadcast array")
     }
   }
 }
