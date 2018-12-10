@@ -13,19 +13,20 @@ class Player(val name: String) {
   }
   val emptyBytes: Array[Byte] = Array.fill(Sound.defaultLength)(0)
 
-  def playerStart(): Unit = {
+  private def playerStart(): Unit = {
     audioOutLine.open(Sound.defaultFormat)
     audioOutLine.start()
   }
 
   def checkThenPlay() = {
+    playerStart()
     while(true){
       if (packetsToPlay.isEmpty) () else play()
       Thread.sleep(10)
     }
   }
 
-  def play(): Unit = {
+  private def play(): Unit = {
     val packet = packetsToPlay.get(0)
     packetsToPlay.remove(0)
 
