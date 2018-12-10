@@ -13,12 +13,12 @@ trait SoundInputLine {
 class MicInputLine(val chatClient: ChatClient.type) extends SoundInputLine {
   val threshold: Int = 0
 
-  val audioSource = {
+  val audioSource: TargetDataLine = {
     val info = new DataLine.Info(classOf[TargetDataLine], null)
     AudioSystem.getLine(info).asInstanceOf[TargetDataLine]
   }
 
-  def listenThenSend() = {
+  def listenThenSend(): Unit = {
     val buffer = new Array[Byte](Sound.defaultLength)
     micStart()
     while(true){
@@ -38,7 +38,7 @@ class MicInputLine(val chatClient: ChatClient.type) extends SoundInputLine {
     buffer.foldLeft(0)(_ +math.abs(_))/buffer.length >= threshold
   }
 
-  private def compressedSoundPacket(buffer: Array[Byte]):Packet = {
+  private def compressedSoundPacket(buffer: Array[Byte]): Packet = {
     val from = chatClient.name
     if (checkVolume(buffer)) {
       val b = new ByteArrayOutputStream()
