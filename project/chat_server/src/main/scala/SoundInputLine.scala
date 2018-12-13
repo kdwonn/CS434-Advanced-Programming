@@ -14,7 +14,7 @@ class MicInputLine(val chatClient: ChatClient.type) extends SoundInputLine  {
   val threshold: Double = 0.5
 
   val audioSource: TargetDataLine = {
-    println("MIC initializing")
+    //println("MIC initializing")
     val info = new DataLine.Info(classOf[TargetDataLine], null)
     AudioSystem.getLine(info).asInstanceOf[TargetDataLine]
   }
@@ -22,7 +22,7 @@ class MicInputLine(val chatClient: ChatClient.type) extends SoundInputLine  {
   def listenThenSend(): Unit = {
     val buffer = new Array[Byte](Sound.defaultLength)
     micStart()
-    println("MIC OPENED")
+    //println("MIC OPENED")
     while(true){
       if (audioSource.available() >= Sound.defaultLength){
         while(audioSource.available() >= Sound.defaultLength){
