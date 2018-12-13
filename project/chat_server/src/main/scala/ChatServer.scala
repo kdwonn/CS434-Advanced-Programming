@@ -17,7 +17,7 @@ object ChatServer extends App{
     Thread.sleep(10)
   }
 
-  def launchServer: Unit = {
+  def launchServer(): Unit = {
     val ss = new ServerSocket(1026)
     println("[SERVER] started")
     while(true) {
