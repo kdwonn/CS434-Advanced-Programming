@@ -54,7 +54,11 @@ object ChatServer extends App{
 
   def broadcast(): Unit ={
     val packet = packetsToBroadcast.get(0)
-    for((name, user) <- users; if name != packet.from){
+    val selfBroadcast = packet match {
+      case TextPacket(_, _) => true
+      case _ => false
+    }
+    for((name, user) <- users; if selfBroadcast || (name != packet.from)){
       user.writePacket(packet)
     }
     packetsToBroadcast.remove(0)
